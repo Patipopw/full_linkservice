@@ -1,0 +1,26 @@
+from pydantic import BaseModel, Field
+from datetime import datetime
+from typing import  Any, Optional
+
+class WebhookLogBase(BaseModel):
+    payload: Any           # เก็บ JSON ที่ส่งมาทั้งหมด
+    engine_type: Optional[str] = None  # เช่น 'so', 'iv', 'po'
+    action_type: Optional[str] = None  # เช่น 'create', 'edit', 'delete'
+    status: str = "received"           # 'received', 'processed', 'failed'
+
+
+class WebhookLogCreate(WebhookLogBase):
+  pass # Used when saving the incoming webhook
+
+class WebhookLog(WebhookLogBase):
+  id: int
+  received_at: datetime
+
+  class Config:
+    from_attributes = True # Critical for SQLAlchemy compatibility
+
+class TRModel(BaseModel):
+    id: int
+    company_id: int
+    time: int
+    hash: str

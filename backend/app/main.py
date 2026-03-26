@@ -3,11 +3,13 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import auth
-from app.api.endpoints import users, quotations 
+# from app.api.endpoints import users, quotations 
 import os
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from pathlib import Path
+
+from app.api.api import api_router
 
 app = FastAPI(title="Linkservice API")
 origins = [
@@ -42,6 +44,9 @@ def test_db(db: Session = Depends(get_db)):
     return {"message": "Database connection is successful!"}
 
 
-app.include_router(auth.router, tags=["Authentication"])
-app.include_router(users.router) 
-app.include_router(quotations.router)
+app.include_router(api_router, prefix="/api/v1")
+
+
+# app.include_router(auth.router, tags=["Authentication"])
+# app.include_router(users.router) 
+# app.include_router(quotations.router)

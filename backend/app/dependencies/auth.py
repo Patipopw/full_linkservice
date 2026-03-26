@@ -1,4 +1,3 @@
-# app/dependencies/auth.py
 from fastapi import Depends, HTTPException, status
 from app.api.deps import get_current_user  
 from app.models.user import User

@@ -19,7 +19,14 @@ class Quotation(Base):
 
     quotation_no = Column(String, index=True, nullable=False)
     version = Column(Integer, default=0, nullable=False, index=True)
-    # quotation_no = Column(String, unique=True, index=True, nullable=False)
+    # External
+    external_qo_id = Column(String(100), index=True, nullable=True)
+    external_qo_no = Column(String(50), index=True, nullable=True) # เลขที่ QO จากระบบอื่น
+    external_so_no = Column(String(50), index=True, nullable=True) # เลขที่ SO จากระบบอื่น
+    external_inv_no = Column(String(50), index=True, nullable=True) # เลขที่ Invoice จากระบบอื่น
+    external_system_status = Column(String(50), nullable=True) # Status จากระบบภายนอก (เพื่อให้ Sale รู้ความคืบหน้า)
+    external_last_update = Column(DateTime(timezone=True), nullable=True)
+
     status = Column(
         Enum(QuotationStatus, native_enum=False), 
         default=QuotationStatus.DRAFT,
@@ -66,6 +73,15 @@ class Quotation(Base):
     )
     notes = relationship("QuotationNote", back_populates="quotation", cascade="all, delete-orphan")
     attachments = relationship("QuotationAttachment", back_populates="quotation") 
+
+
+    linked_trcloud_so_id = Column(String(100), index=True, nullable=True) 
+    linked_trcloud_so_no = Column(String(50), nullable=True) 
+    sync_status = Column(String(20), default="pending")
+    tr_sale_orders = relationship("SaleOrder", backref="quotation")
+    tr_invoices = relationship("Invoice", backref="quotation")
+    tr_material_requests = relationship("MaterialRequest", backref="quotation")
+
 
 
 class QuotationAttachment(Base):

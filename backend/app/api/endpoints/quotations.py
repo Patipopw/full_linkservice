@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Body
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
+from datetime import datetime
 
 from app.db.session import get_db
 from app.schemas.quotation import Quotation, QuotationCreate, QuotationUpdate, QuotationStatusUpdate
@@ -22,12 +23,7 @@ from app.dependencies.auth import PermissionChecker
 from app.models.user import User
 from app.crud.quotation import crud_upload_quotation_attachment, crud_delete_quotation_attachment, get_quotation_attachments, crud_upload_item_images, crud_soft_delete_item_image, get_attachment_by_id, MAX_FILE_SIZE, UPLOAD_BASE_DIR
 
-# router = APIRouter()
-router = APIRouter(
-    prefix="/api/v1/quotations",
-    tags=["Quotations"],
-    dependencies=[Depends(PermissionChecker("view_quotation"))]
-)
+router = APIRouter()
 
 @router.post("/", response_model=Quotation, status_code=status.HTTP_201_CREATED)
 def create_new_quotation(
@@ -303,3 +299,37 @@ async def delete_item_image(
     if not db_image:
         raise HTTPException(status_code=404, detail="Image not found")
     return db_image
+
+@router.patch("/{quotation_no}/external-sync")
+def sync_external_status(
+    quotation_no: str,
+    qo_id: Optional[str] = Body(None),
+    qo_no: Optional[str] = Body(None),
+    so_no: Optional[str] = Body(None),
+    inv_no: Optional[str] = Body(None),
+    status: Optional[str] = Body(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint ให้ระบบอื่นเรียกเพื่ออัปเดตสถานะกลับมาที่ Quotation
+    """
+    db_quotation = db.query(Quotation).filter(Quotation.quotation_no == quotation_no).first()
+    
+    if not db_quotation:
+        raise HTTPException(status_code=404, detail="ไม่พบใบเสนอราคาที่ระบุ")
+
+    # อัปเดตข้อมูล Reference
+    if qo_id: db_quotation.external_qo_id = qo_id
+    if qo_no: db_quotation.external_qo_no = qo_no
+    if so_no: db_quotation.external_so_no = so_no
+    if inv_no: db_quotation.external_inv_no = inv_no
+    if status: db_quotation.external_system_status = status
+    
+    db_quotation.external_last_update = datetime.now()
+    
+    # ถ้าสถานะภายนอกเป็น 'Invoiced' หรือ 'Paid' อาจจะปรับ status ภายในเป็น 'win' อัตโนมัติ
+    if status in ["Invoiced", "Paid"]:
+        db_quotation.status = "win"
+
+    db.commit()
+    return {"message": "Status synchronized successfully", "quotation_no": quotation_no}

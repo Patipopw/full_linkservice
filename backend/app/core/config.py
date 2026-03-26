@@ -22,6 +22,14 @@ class Settings(BaseSettings):
     # URL พื้นฐานของ Backend (เช่น http://localhost:8000)
     BACKEND_HOST: str = "http://localhost:8000"
 
+
+    # --- TRCloud Configuration ---
+    TRC_COMPANY_ID: str
+    TRC_PASSKEY: str
+    TRC_ENCRYPT_HEAD: str
+    TRC_ORIGIN: str = "https://www.trcloud.co"
+    TRC_API_BASE_URL: str = "https://wtccomputer.trcloud.co"
+
     # สร้าง URL สำหรับเข้าถึงไฟล์ผ่าน Browser อัตโนมัติ
     @computed_field
     @property

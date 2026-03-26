@@ -8,11 +8,7 @@ from app.dependencies.auth import PermissionChecker
 from app.models.user import User
 from typing import List
 
-router = APIRouter(
-    prefix="/api/v1/users", 
-    tags=["User Management"],
-    dependencies=[Depends(PermissionChecker("manage_users"))]
-)
+router = APIRouter()
 
 @router.put("/{user_id}/roles", response_model=UserOut)
 def api_update_user_roles(user_id: int, data: UserRoleUpdate, db: Session = Depends(get_db)):

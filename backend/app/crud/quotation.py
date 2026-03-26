@@ -9,6 +9,7 @@ from app.models.quotation import QuotationStatus
 from typing import Optional, List
 
 from app.models.quotation_note import QuotationNote
+from app.models.product import Product as ProductModel
 from app.schemas.quotation_note import QuotationNoteCreate
 from app.models.quotation import QuotationAttachment
 from app.models.quotation_item import QuotationItemImage
@@ -38,12 +39,13 @@ def generate_quotation_no(db: Session):
     return f"{prefix}{next_number:04d}"
 
 def create_quotation(db: Session, obj_in: QuotationCreate, creator_user: any):
-    # 1. แยกข้อมูล Items ออกจากข้อมูลหลัก (Header)
+    # 1. แยกข้อมูล Header
     quotation_data = obj_in.model_dump(exclude={"items", "quotation_no", "creator", "creator_id", "version"})
-    # เจนเลขใหม่
+    
     new_no = generate_quotation_no(db)
     current_version = getattr(obj_in, "version", 0)
-    # 2. สร้างตารางแม่ (Quotation)
+
+    # 2. สร้าง Header (Quotation)
     db_quotation = Quotation(
         **quotation_data,
         quotation_no=new_no,
@@ -52,14 +54,33 @@ def create_quotation(db: Session, obj_in: QuotationCreate, creator_user: any):
         creator_id=str(creator_user.id)
     )
     db.add(db_quotation)
-    db.flush()  # เพื่อให้ได้ id ของ quotation มาก่อนโดยยังไม่ commit
+    db.flush() 
 
-    # สร้างรายการสินค้า (Items)
+    # 3. สร้างรายการสินค้า (Items) พร้อม Auto-fill จาก Product Master
     for item_in in obj_in.items:
-        # คำนวณ total_item_price อัตโนมัติ (ถ้ายังไม่มีการส่งมา)
         item_data = item_in.model_dump()
-        if not item_data.get("total_item_price"):
-            item_data["total_item_price"] = (item_data["quantity"] * item_data["price"]) - item_data["discount_item"]
+        
+        # --- LOGIC: Auto-fill จาก Product Master ---
+        if item_data.get("product_id"):
+            product = db.query(ProductModel).filter(
+                ProductModel.id == item_data["product_id"],
+                ProductModel.deleted_at == None
+            ).first()
+            
+            if product:
+                # ถ้า User ไม่ได้กรอกค่ามา (หรือส่งมาเป็น null/empty) ให้ใช้จาก Master
+                item_data["product_name"] = item_data.get("product_name") or product.name
+                item_data["product_description"] = item_data.get("product_description") or product.description
+                item_data["price"] = item_data.get("price") or product.standard_price
+                item_data["cost"] = item_data.get("cost") or product.cost
+                item_data["unit"] = item_data.get("unit") or product.unit
+                item_data["product_part"] = item_data.get("product_part") or product.sku
+
+        # --- คำนวณราคารวม (Total Price) ---
+        qty = item_data.get("quantity") or 1
+        price = item_data.get("price") or 0
+        discount = item_data.get("discount_item") or 0
+        item_data["total_item_price"] = (qty * price) - discount
 
         db_item = QuotationItem(
             **item_data,
@@ -67,6 +88,7 @@ def create_quotation(db: Session, obj_in: QuotationCreate, creator_user: any):
         )
         db.add(db_item)
 
+    # 4. บันทึก Audit Log
     db.add(AuditLog(
         target_type="quotation",
         target_id=db_quotation.id,
@@ -77,7 +99,6 @@ def create_quotation(db: Session, obj_in: QuotationCreate, creator_user: any):
         changed_by_id=str(creator_user.id)
     ))
     
-    # 4. บันทึกทั้งหมดลง Database พร้อมกัน
     db.commit()
     db.refresh(db_quotation)
     return db_quotation

@@ -9,7 +9,8 @@ class QuotationItem(Base):
     
     # เชื่อมกลับไปที่ใบเสนอราคาหลัก (Parent)
     quotation_id = Column(Integer, ForeignKey("quotations.id", ondelete="CASCADE"), nullable=False)
-    item_no = Column(Integer, nullable=False)       
+    item_no = Column(Integer, nullable=False)  
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="SET NULL"), nullable=True)     
     product_name= Column(String, nullable=True)        
     product_part= Column(String, nullable=True)        
     product_description = Column(Text, nullable=False)     
@@ -33,6 +34,8 @@ class QuotationItem(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(),  onupdate=func.now())
     deleted_at = Column(DateTime(timezone=True), nullable=True)
+    
+    product = relationship("Product") 
     quotation = relationship("Quotation", back_populates="items")
     images = relationship(
         "QuotationItemImage", 
