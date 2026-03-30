@@ -80,7 +80,6 @@ class Quotation(Base):
     sync_status = Column(String(20), default="pending")
     tr_sale_orders = relationship("SaleOrder", backref="quotation")
     tr_invoices = relationship("Invoice", backref="quotation")
-    tr_material_requests = relationship("MaterialRequest", backref="quotation")
 
 
 

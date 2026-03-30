@@ -48,8 +48,7 @@ class QuotationUpdate(QuotationBase):
     # (แนะนำให้สร้าง Schema สำหรับ Update Item แยกต่างหากถ้า logic ซับซ้อน)
     items: Optional[List[QuotationItemCreate]] = None 
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class QuotationStatusUpdate(BaseModel):
     status: str

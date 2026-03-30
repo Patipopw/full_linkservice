@@ -21,8 +21,7 @@ class UserOut(BaseModel):
     is_active: bool
     roles: List[RoleOut] = [] 
 
-    class Config:
-        from_attributes = True  # ช่วยให้แปลงจาก SQLAlchemy Model เป็น Pydantic ได้อัตโนมัติ
+    model_config = ConfigDict(from_attributes=True)
 
 # สำหรับส่ง Token กลับไปหลัง Login สำเร็จ
 class Token(BaseModel):

@@ -11,9 +11,9 @@ def create_webhook_log(db: Session, payload_str: str, engine_type: str, action_t
     """
     db_log = WebhookLog(
         payload=payload_str,
-        engine_type=engine_type,
-        action_type=action_type,
-        status="received" # ตั้งสถานะเริ่มต้น
+        engine=engine_type,
+        action=action_type
+        # status="received" # ตั้งสถานะเริ่มต้น
     )
     try:
         db.add(db_log)

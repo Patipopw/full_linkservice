@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,15 +39,27 @@ app.mount("/uploads", StaticFiles(directory=str(upload_root)), name="uploads")
 def read_root():
     return {"status": "Backend is running!"}
 
-@app.get("/db-test")
-def test_db(db: Session = Depends(get_db)):
-    # ถ้าเชื่อมต่อได้ จะไม่ Error และคืนค่า Success
-    return {"message": "Database connection is successful!"}
+@api_router.get("/healthcheck", tags=["System"])
+def health_check(db: Session = Depends(get_db)):
+    try:
+        # ส่งคำสั่งง่ายๆ ไปเช็คว่า DB ยังตอบสนองไหม
+        db.execute(text("SELECT 1"))
+        return {
+            "status": "online",
+            "database": "connected",
+            "message": "Service is running smoothly"
+        }
+    except Exception as e:
+        # ถ้าเชื่อมต่อไม่ได้ ให้ส่ง Error 503 (Service Unavailable)
+        raise HTTPException(
+            status_code=503,
+            detail=f"Database connection failed: {str(e)}"
+        )
 
 
 app.include_router(api_router, prefix="/api/v1")
 
 
-# app.include_router(auth.router, tags=["Authentication"])
+app.include_router(auth.router, tags=["Authentication"])
 # app.include_router(users.router) 
 # app.include_router(quotations.router)

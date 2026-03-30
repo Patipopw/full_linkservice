@@ -7,10 +7,10 @@ from app.dependencies.auth import PermissionChecker
 api_router = APIRouter()
 
 
-api_router.include_router(
-    auth.router, 
-    tags=["Authentication"]
-)
+# api_router.include_router(
+#     auth.router, 
+#     tags=["Authentication"]
+# )
 
 # 1. หมวดใบเสนอราคา
 api_router.include_router(

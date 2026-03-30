@@ -16,3 +16,7 @@ python-multipart
 pydantic[email]
 python-dotenv
 pydantic-settings
+
+pytest
+httpx
+

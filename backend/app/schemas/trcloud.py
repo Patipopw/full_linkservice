@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import  Any, Optional
 
@@ -16,8 +16,7 @@ class WebhookLog(WebhookLogBase):
   id: int
   received_at: datetime
 
-  class Config:
-    from_attributes = True # Critical for SQLAlchemy compatibility
+  model_config = ConfigDict(from_attributes=True)
 
 class TRModel(BaseModel):
     id: int
