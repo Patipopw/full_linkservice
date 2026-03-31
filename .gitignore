@@ -4,6 +4,17 @@ Thumbs.db
 .vscode/
 .idea/
 
+# --- Secrets & Config ---
+.env
+.env.local
+.env.*.local
+*.env
+
+
+# --- Docker ---
+.docker/
+# ไม่ต้อง ignore docker-compose.yml เพราะต้องใช้ deploy
+
 # --- Backend (Python/FastAPI/PostgreSQL) ---
 backend/venv/
 backend/__pycache__/
@@ -12,8 +23,8 @@ backend/.env
 backend/.pytest_cache/
 
 # ข้ามไฟล์ที่อัปโหลด (สำคัญมาก! เพื่อไม่ให้รูปขยะขึ้น GitHub)
-backend/uploads/
-backend/uploads/quotations/
+backend/uploads/*
+!backend/uploads/.gitkeep
 
 # --- Frontend (Next.js) ---
 frontend/node_modules/
@@ -36,3 +47,6 @@ backend/*.sqlite3
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+__pycache__/
+*.pyc

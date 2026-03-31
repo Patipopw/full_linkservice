@@ -10,6 +10,7 @@ class Settings(BaseSettings):
 
     # --- Database (Pydantic จะเช็คว่าเป็นรูปแบบ URL ที่ถูกต้องไหม) ---
     DATABASE_URL: str 
+    TEST_DATABASE_URL: str 
 
     # --- Auth & Security ---
     SECRET_KEY: str
@@ -21,6 +22,7 @@ class Settings(BaseSettings):
     
     # URL พื้นฐานของ Backend (เช่น http://localhost:8000)
     BACKEND_HOST: str = "http://localhost:8000"
+    DEBUG: bool =True
 
 
     # --- TRCloud Configuration ---
@@ -38,10 +40,11 @@ class Settings(BaseSettings):
 
     # --- บอกให้ Pydantic อ่านไฟล์ .env ---
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
+        # env_file=".env",
+        # env_file_encoding="utf-8",
         extra="ignore" # ถ้าใน .env มีตัวแปรเกินมาให้ข้ามไป
     )
-
+    # class Config:
+    #     env_file = ".env"
 # สร้าง Instance เพื่อเรียกใช้งานทั้งโปรเจกต์
 settings = Settings()

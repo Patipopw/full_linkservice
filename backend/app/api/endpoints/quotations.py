@@ -21,7 +21,7 @@ from app.api.auth import get_current_user
 from app.crud.quotation import get_quotation_audit_logs
 from app.dependencies.auth import PermissionChecker 
 from app.models.user import User
-from app.crud.quotation import crud_upload_quotation_attachment, crud_delete_quotation_attachment, get_quotation_attachments, crud_upload_item_images, crud_soft_delete_item_image, get_attachment_by_id, MAX_FILE_SIZE, UPLOAD_BASE_DIR
+from app.crud.quotation import crud_upload_quotation_attachment, crud_delete_quotation_attachment, get_quotation_attachments, crud_upload_item_images, crud_soft_delete_item_image, get_attachment_by_id, MAX_FILE_SIZE, UPLOAD_BASE_DIR, clone_quotation
 
 router = APIRouter()
 
@@ -333,3 +333,18 @@ def sync_external_status(
 
     db.commit()
     return {"message": "Status synchronized successfully", "quotation_no": quotation_no}
+
+@router.post("/{quotation_id}/clone", response_model=Quotation, status_code=201)
+def clone_quotation_api(
+    quotation_id: int, 
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """
+    คัดลอกข้อมูลจากใบเสนอราคาเดิมมาสร้างเป็นใบใหม่ (เลขที่ใหม่ Version 0)
+    """
+    db_source = get_quotation(db, quotation_id=quotation_id)
+    if not db_source:
+        raise HTTPException(status_code=404, detail="ไม่พบต้นฉบับที่ต้องการคัดลอก")
+    
+    return clone_quotation(db, db_source=db_source, user=current_user)

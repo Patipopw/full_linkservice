@@ -6,8 +6,7 @@ from app.crud.trcloud import upsert_document, soft_delete_document
 from app import models
 import datetime
 def dev_log(message):
-    # ใช้ settings.ENV แทน os.getenv
-    if settings.ENV != "production":
+    if settings.DEBUG :
         print(message)
 
 async def handle_document(doc_id: str, engine: str, action: str):

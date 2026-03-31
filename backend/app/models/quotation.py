@@ -33,8 +33,11 @@ class Quotation(Base):
         nullable=False,
         index=True
     )
+
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     company_name = Column(String, nullable=False)
     company_address = Column(Text, nullable=True)
+    contact_id = Column(Integer, ForeignKey("company_contacts.id"), nullable=True)
     customer_name = Column(String, nullable=False)
     customer_tel = Column(String, nullable=True)
     customer_email = Column(String, nullable=True)
@@ -73,6 +76,9 @@ class Quotation(Base):
     )
     notes = relationship("QuotationNote", back_populates="quotation", cascade="all, delete-orphan")
     attachments = relationship("QuotationAttachment", back_populates="quotation") 
+
+    company = relationship("Company", back_populates="quotations")
+    contact_person = relationship("CompanyContact")
 
 
     linked_trcloud_so_id = Column(String(100), index=True, nullable=True) 

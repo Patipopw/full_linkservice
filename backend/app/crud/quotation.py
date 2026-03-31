@@ -10,6 +10,7 @@ from typing import Optional, List
 
 from app.models.quotation_note import QuotationNote
 from app.models.product import Product as ProductModel
+from app.models.company import CompanyContact, Company
 from app.schemas.quotation_note import QuotationNoteCreate
 from app.models.quotation import QuotationAttachment
 from app.models.quotation_item import QuotationItemImage
@@ -42,6 +43,20 @@ def create_quotation(db: Session, obj_in: QuotationCreate, creator_user: any):
     # 1. แยกข้อมูล Header
     quotation_data = obj_in.model_dump(exclude={"items", "quotation_no", "creator", "creator_id", "version"})
     
+    # --- LOGIC: Auto-fill จาก Company Master ---
+    company = db.query(Company).filter(Company.id == obj_in.company_id).first()
+    if company:
+        quotation_data["company_name"] = quotation_data.get("company_name") or company.name
+        quotation_data["company_address"] = quotation_data.get("company_address") or company.address
+
+    # --- LOGIC: Auto-fill จาก Contact Person ---
+    if obj_in.contact_id:
+        contact = db.query(CompanyContact).filter(CompanyContact.id == obj_in.contact_id).first()
+        if contact:
+            quotation_data["customer_name"] = quotation_data.get("customer_name") or contact.name
+            quotation_data["customer_tel"] = quotation_data.get("customer_tel") or contact.phone
+            quotation_data["customer_email"] = quotation_data.get("customer_email") or contact.email
+
     new_no = generate_quotation_no(db)
     current_version = getattr(obj_in, "version", 0)
 
@@ -234,6 +249,20 @@ def update_quotation(db: Session, db_obj: Quotation, obj_in: QuotationUpdate, us
                 "old": str(old_value) if old_value is not None else None,
                 "new": str(new_value)
             }
+
+    # --- LOGIC: ถ้ามีการเปลี่ยน Company/Contact ให้ทำ Snapshot ใหม่ ---
+    if "company_id" in update_data and update_data["company_id"] != db_obj.company_id:
+        company = db.query(Company).get(update_data["company_id"])
+        if company:
+            update_data["company_name"] = company.name
+            update_data["company_address"] = company.address
+            
+    if "contact_id" in update_data and update_data["contact_id"] != db_obj.contact_id:
+        contact = db.query(CompanyContact).get(update_data["contact_id"])
+        if contact:
+            update_data["customer_name"] = contact.name
+            update_data["customer_tel"] = contact.phone
+            update_data["customer_email"] = contact.email
 
     # --- 3. จัดการ Items (ถ้ามีการส่งมา) ---
     if "items" in update_data:
@@ -620,3 +649,51 @@ def get_item_with_active_images(db: Session, item_id: int):
         item.images = [img for img in item.images if img.deleted_at is None]
         
     return item
+
+def clone_quotation(db: Session, db_source: Quotation, user: any):
+    # 1. ดึงข้อมูลจากต้นฉบับ (ลบฟิลด์ที่ไม่ต้องการคัดลอกออก)
+    source_data = {
+        c.name: getattr(db_source, c.name) 
+        for c in db_source.__table__.columns 
+        if c.name not in ["id", "quotation_no", "version", "created_at", "updated_at", "deleted_at", "status"]
+    }
+    
+    # 2. รันเลขที่เอกสารใหม่ และตั้งค่าพื้นฐานใหม่
+    new_no = generate_quotation_no(db) # ฟังก์ชันรันเลขที่ของโปรเจกต์คุณ
+    
+    db_clone = Quotation(
+        **source_data,
+        quotation_no=new_no,
+        version=0,                 # เริ่มนับ Version 0 ใหม่
+        status="draft",            # สถานะเริ่มต้นต้องเป็น Draft เสมอ
+        creator=user.full_name or user.email,
+        creator_id=str(user.id),
+        created_at=datetime.now()
+    )
+    db.add(db_clone)
+    db.flush() # เพื่อให้ได้ ID ของใบใหม่มาใช้ผูกกับ Items
+
+    # 3. คัดลอกรายการสินค้า (Items)
+    for item in db_source.items:
+        item_data = {
+            c.name: getattr(item, c.name) 
+            for c in item.__table__.columns 
+            if c.name not in ["id", "quotation_id"]
+        }
+        db_item = QuotationItem(**item_data, quotation_id=db_clone.id)
+        db.add(db_item)
+
+    # 4. บันทึก Audit Log เพื่อบอกว่าใบนี้ Copy มาจากใบไหน
+    db.add(AuditLog(
+        target_type="quotation",
+        target_id=db_clone.id,
+        document_no=db_clone.quotation_no,
+        action="CLONE",
+        changes={"source_quotation_no": db_source.quotation_no},
+        changed_by=user.full_name or user.email,
+        changed_by_id=str(user.id)
+    ))
+
+    db.commit()
+    db.refresh(db_clone)
+    return db_clone

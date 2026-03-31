@@ -10,12 +10,15 @@ from app.models.trcloud_doc import MaterialRequest, SaleOrder
 from datetime import date, timedelta, datetime
 from app.api.deps import get_current_user
 from types import SimpleNamespace
+from app.core.config import settings
+
 
 import os
 from dotenv import load_dotenv
 load_dotenv()
 # ใช้ SQLite หรือ Postgres แยกต่างหากสำหรับ Test
-SQLALCHEMY_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "postgresql://user:pass@localhost:5432/test_db_default")
+# SQLALCHEMY_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "postgresql://user:pass@localhost:5432/test_db_default")
+SQLALCHEMY_DATABASE_URL = settings.TEST_DATABASE_URL
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

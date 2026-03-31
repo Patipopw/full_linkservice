@@ -3,8 +3,10 @@ from jose import jwt
 from passlib.context import CryptContext
 import os
 import bcrypt
+from app.core.config import settings
 
-SECRET_KEY = os.getenv("SECRET_KEY", "your-super-secret-key")
+# SECRET_KEY = os.getenv("SECRET_KEY", "your-super-secret-key")
+SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
 
 class Hasher:

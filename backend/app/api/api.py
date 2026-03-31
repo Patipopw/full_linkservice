@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from app.api import auth
-from app.api.endpoints import quotations, users, products
+from app.api.endpoints import quotations, users, products, companies
 from app.api.endpoints.trcloud import webhook      
 from app.dependencies.auth import PermissionChecker
 
@@ -31,6 +31,12 @@ api_router.include_router(
     products.router, 
     prefix="/products", 
     tags=["Products"]
+)
+
+api_router.include_router(
+    companies.router, 
+    prefix="/companies", 
+    tags=["Companies"]
 )
 
 # 3. หมวดเชื่อมต่อ TRCloud (Webhook)

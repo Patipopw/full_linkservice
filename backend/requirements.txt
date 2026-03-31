@@ -1,6 +1,7 @@
 # Web Framework
 fastapi[all]
 uvicorn[standard]
+gunicorn
 
 # Database & Migration
 sqlalchemy
@@ -10,6 +11,7 @@ alembic
 # Security & Auth
 python-jose[cryptography]
 passlib[bcrypt]
+bcrypt
 python-multipart
 
 # Validation & Utilities
@@ -17,6 +19,6 @@ pydantic[email]
 python-dotenv
 pydantic-settings
 
+# Testing (ถ้าจะรัน test ใน docker ด้วย)
 pytest
 httpx
-
