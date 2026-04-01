@@ -28,6 +28,22 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5435:5432" # ใช้ 5435 เพื่อเลี่ยงพอร์ตทับซ้อนบน Local
-
+  frontend:
+    build:
+      context: ./frontend  # ระบุ Path ไปยังโฟลเดอร์ Next.js
+      dockerfile: Dockerfile
+    container_name: frontend_linkservice
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000  # สำหรับเรียก API จาก Browser
+      - BACKEND_URL=http://backend:8000           # สำหรับ Server-side Rendering (SSR)
+    depends_on:
+      - backend
+    command: npm run dev
 volumes:
   postgres_data:
