@@ -29,7 +29,7 @@ class QuotationBase(BaseModel):
 
 class QuotationCreate(QuotationBase):
     # --- เชื่อมโยงกับ Master Data ---
-    company_id: int             # ID ของบริษัทในระบบ LinkService
+    company_id: Optional[int] = None             # ID ของบริษัทในระบบ LinkService
     contact_id: Optional[int] = None # ID ของผู้ติดต่อในระบบ LinkService
 
     company_name: Optional[str] = None 
@@ -42,7 +42,7 @@ class Quotation(QuotationBase):
     quotation_no: str 
     
     # Foreign Keys
-    company_id: int
+    company_id: Optional[int] = None
     contact_id: Optional[int] = None
     
     # ข้อมูล Master Data ปัจจุบัน (Nested JSON)

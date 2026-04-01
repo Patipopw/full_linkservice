@@ -34,7 +34,7 @@ class Quotation(Base):
         index=True
     )
 
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
     company_name = Column(String, nullable=False)
     company_address = Column(Text, nullable=True)
     contact_id = Column(Integer, ForeignKey("company_contacts.id"), nullable=True)

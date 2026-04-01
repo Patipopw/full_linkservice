@@ -14,7 +14,7 @@ from app.models.company import CompanyContact, Company
 from app.schemas.quotation_note import QuotationNoteCreate
 from app.models.quotation import QuotationAttachment
 from app.models.quotation_item import QuotationItemImage
-from fastapi import UploadFile
+from fastapi import UploadFile, HTTPException
 import os
 import uuid
 import shutil
@@ -44,18 +44,28 @@ def create_quotation(db: Session, obj_in: QuotationCreate, creator_user: any):
     quotation_data = obj_in.model_dump(exclude={"items", "quotation_no", "creator", "creator_id", "version"})
     
     # --- LOGIC: Auto-fill จาก Company Master ---
-    company = db.query(Company).filter(Company.id == obj_in.company_id).first()
-    if company:
+    if obj_in.company_id:
+        company = db.query(Company).filter(Company.id == obj_in.company_id).first()
+        if not company:
+            raise HTTPException(status_code=400, detail="Company not found")
+        
         quotation_data["company_name"] = quotation_data.get("company_name") or company.name
         quotation_data["company_address"] = quotation_data.get("company_address") or company.address
+    else:
+        # กรณีไม่มี company_id ต้องมั่นใจว่าส่ง company_name มา (ถ้า DB บังคับ)
+        if not quotation_data.get("company_name"):
+            raise HTTPException(status_code=400, detail="Company name is required if company_id is not provided")
 
-    # --- LOGIC: Auto-fill จาก Contact Person ---
+    # 2. จัดการ Contact (Auto-fill หรือ Validate)
     if obj_in.contact_id:
         contact = db.query(CompanyContact).filter(CompanyContact.id == obj_in.contact_id).first()
-        if contact:
-            quotation_data["customer_name"] = quotation_data.get("customer_name") or contact.name
-            quotation_data["customer_tel"] = quotation_data.get("customer_tel") or contact.phone
-            quotation_data["customer_email"] = quotation_data.get("customer_email") or contact.email
+        if not contact:
+            raise HTTPException(status_code=400, detail="Contact person not found")
+        
+        quotation_data["customer_name"] = quotation_data.get("customer_name") or contact.name
+        quotation_data["customer_tel"] = quotation_data.get("customer_tel") or contact.phone
+        quotation_data["customer_email"] = quotation_data.get("customer_email") or contact.email
+
 
     new_no = generate_quotation_no(db)
     current_version = getattr(obj_in, "version", 0)

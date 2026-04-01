@@ -6,11 +6,11 @@ from sqlalchemy import pool
 from alembic import context
 
 from app.db.session import Base 
-import os
+# import os
 
 from app.core.config import settings
-from dotenv import load_dotenv
-load_dotenv()
+# from dotenv import load_dotenv
+# load_dotenv()
 
 from app.models.base import Base
 from app.models.user import User
@@ -20,6 +20,7 @@ from app.models.quotation_item import QuotationItem, QuotationItemImage
 from app.models.audit_log import AuditLog
 from app.models.quotation_note import QuotationNote
 from app.models.auth import Permission, Role
+from app.models.company import Company, CompanyContact
 from app.models.trcloud_doc import SaleOrder, Invoice, PurchaseOrder, MaterialRequest, PurchaseRequest, GoodReceive, WebhookLog
 
 # this is the Alembic Config object, which provides
